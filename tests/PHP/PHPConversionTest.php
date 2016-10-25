@@ -32,13 +32,14 @@ class PHPConversionTest extends \PHPUnit_Framework_TestCase
             $schemas[] = $reader->readString($str, $name);
         }
         $items = $phpcreator->convert($schemas);
-
+        
         $classes = array();
         foreach ($items as $k => $item) {
             if ($codegen = $generator->generate($item)) {
                 $classes[$k] = $codegen;
             }
         }
+        
         return $classes;
     }
 
@@ -244,4 +245,48 @@ class PHPConversionTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($single->hasMethod('getId'));
         $this->assertTrue($single->hasMethod('setId'));
     }
+    
+//    public function testSimpleTypeWithPattern()
+//    {
+//        $xml = '
+//            <xs:schema targetNamespace="http://www.example.com"
+//            xmlns:xs="http://www.w3.org/2001/XMLSchema">
+//                <xs:simpleType name="dm_motivoSaida">
+//                    <xs:restriction base="xs:decimal">
+//                        <xs:totalDigits value="3"/>
+//			<xs:fractionDigits value="2"/>
+//                        <xs:length value="1"/>
+//                    </xs:restriction>
+//                </xs:simpleType>
+//            </xs:schema>';
+//
+//        $items = $this->getClasses($xml);
+//
+//        $this->assertCount(1, $items);
+//        
+//        $single = $items['Example\DmMotivoSaidaType'];
+//        
+//            
+//            $fileGen = new \Zend\Code\Generator\FileGenerator();
+//            $fileGen->setFilename('DmMotivoSaidaType.php');
+//            $fileGen->setClass($single);
+//            $fileGen->write();        
+//        die();
+////        
+////        $file = new \GoetasWebservices\Xsd\XsdToPhp\Writer\PHPClassWriter($pathGen);
+////        $file->write($items);
+//        //var_dump($file);
+//        
+//        die();
+////        $fileGen = new FileGenerator();
+////        $fileGen->setFilename($path);
+////        $fileGen->setClass($item);
+////        $fileGen->write();
+//        
+//        $this->assertTrue($single->hasMethod('issetId'));
+//        $this->assertTrue($single->hasMethod('unsetId'));
+//
+//        $this->assertTrue($single->hasMethod('getId'));
+//        $this->assertTrue($single->hasMethod('setId'));
+//    }
 }
