@@ -239,10 +239,14 @@ class PhpConverter extends AbstractConverter
             $class->setDoc($type->getDoc() . PHP_EOL . "XSD Type: " . ($type->getName() ?: 'anonymous'));
 
             $this->visitTypeBase($class, $type);
-
+            
             if ($type instanceof SimpleType) {
-                $this->classes[spl_object_hash($type)]["skip"] = true;
-                $this->skipByType[spl_object_hash($class)] = true;
+                $skip = true;
+                if ($restriction = $type->getRestriction()) {
+                    $skip = count($restriction->getChecks()) === 0;
+                }
+                $this->classes[spl_object_hash($type)]["skip"] = $skip;
+                $this->skipByType[spl_object_hash($class)] = $skip;
                 return $class;
             }
             if (($this->isArrayType($type) || $this->isArrayNestedElement($type)) && !$force) {
