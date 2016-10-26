@@ -222,7 +222,7 @@ class PhpConverter extends AbstractConverter
         if (!isset($this->classes[spl_object_hash($type)])) {
 
             $skip = $skip || in_array($type->getSchema()->getTargetNamespace(), $this->baseSchemas, true);
-
+            
             $this->classes[spl_object_hash($type)]["class"] = $class = new PHPClass();
 
             if ($alias = $this->getTypeAlias($type)) {
@@ -241,12 +241,12 @@ class PhpConverter extends AbstractConverter
             $this->visitTypeBase($class, $type);
             
             if ($type instanceof SimpleType) {
-                $skip = true;
+                $skipType = true;
                 if ($restriction = $type->getRestriction()) {
-                    $skip = count($restriction->getChecks()) === 0;
+                    $skipType = count($restriction->getChecks()) === 0;
                 }
-                $this->classes[spl_object_hash($type)]["skip"] = $skip;
-                $this->skipByType[spl_object_hash($class)] = $skip;
+                $this->classes[spl_object_hash($type)]["skip"] = $skipType || $skip;
+                $this->skipByType[spl_object_hash($class)] = $skipType || $skip;
                 return $class;
             }
             if (($this->isArrayType($type) || $this->isArrayNestedElement($type)) && !$force) {

@@ -52,8 +52,8 @@ class ClassGenerator
         ]);
     }
     
-    private function getAvailableChecks(PHPProperty $prop, PHPClass $class, $checkName, $nativeType = null) {
-        
+    private function getAvailableChecks(PHPProperty $prop, PHPClass $class, $checkName, $nativeType = null) 
+    {
         $checks = $class->getChecks('__value');
         if (count($checks) === 0) {
             return false;
@@ -78,7 +78,6 @@ class ClassGenerator
         }
         
         return $check;
-        
     }
 
     /**
@@ -89,14 +88,13 @@ class ClassGenerator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueEnumeration(Generator\ClassGenerator $generator, MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) {
-        
+    private function handleValueEnumeration(Generator\ClassGenerator $generator, MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'enumeration' )) {
             return;
         }
         
-        $type = $prop->getType();
-        
+        $type = $prop->getType();        
         $typeDefinition = 'mixed';
         if ($type && $type instanceof PHPClassOf) {
             $typeDefinition = $type->getArg()->getType()->getPhpType();
@@ -104,30 +102,28 @@ class ClassGenerator
             $typeDefinition = $prop->getType()->getPhpType();
         }
         
-        // 
         // const
-        // 
         $constNames = array();
         foreach ($checks as $enum) {
             $constName = 'V_' . strtoupper( preg_replace( '/[^0-9a-zA-Z]+/i', '_', $enum['value'] ) );
             $constValue = $enum['value'];
             $constNames[] = $constName;
             
-            $docblock = new DocBlockGenerator();
-            $paramTag = new GenericTag("var", $typeDefinition);
-            $docblock->setTag($paramTag);
+            if ($generator->getConstant($constName) === false) {
+                $docblock = new DocBlockGenerator();
+                $paramTag = new GenericTag("var", $typeDefinition);
+                $docblock->setTag($paramTag);
             
-            $const = new PropertyGenerator($constName, $constValue);
-            $const->setConst(true);
-            $const->setDocBlock($docblock);            
-            
-            $generator->addPropertyFromGenerator($const);
+                $const = new PropertyGenerator($constName, $constValue);
+                $const->setConst(true);
+                $const->setDocBlock($docblock);            
+
+                $generator->addPropertyFromGenerator($const);
+            }
             
         }
         
-        //
         // public static function values()	
-        //
         $docblock = new DocBlockGenerator('Gets all possible value');
         $docblock->setTag(new ReturnTag("array"));
         
@@ -141,191 +137,249 @@ class ClassGenerator
         ");");
             
         $generator->addMethodFromGenerator($method);
-        
-        //
-        // protected function _checkEnumeration($value)
-        //
-        $paramTag = new ParamTag("value", "mixed");
-        $paramTag->setTypes($typeDefinition);
-        
-        $docblock = new DocBlockGenerator('Validate enumeration value');        
-        $docblock->setTag($paramTag);
 
-        $methodBody  = "if (!in_array(\$value, static::values())) {" . PHP_EOL;
-        $methodBody .= "    \$values = implode(', ', static::values());" . PHP_EOL;
-        $methodBody .= "    throw new \InvalidArgumentException(\"The restriction enumeration with '\$values' is not true\");" . PHP_EOL;
-        $methodBody .= "}" . PHP_EOL;
-        
-        $method = new MethodGenerator("_checkEnumeration", [
-            new ParameterGenerator("value", $type->getPhpType())
-        ]);
-        $method->setVisibility(MethodGenerator::VISIBILITY_PROTECTED);
-        $method->setDocBlock($docblock);
-        $method->setBody($methodBody);
-
-        $generator->addMethodFromGenerator($method);
-        
-        //
         // add from `protected function _checkRestrictions($value)`
-        //
-        $methodBody = "\$this->_checkEnumeration(\$value);" . PHP_EOL;
-        
+        $methodBody = "\$value = RestrictionUtils::checkEnumeration(\$value, static::values());" . PHP_EOL;        
         $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
-        
     }
 
     /**
      * Defines the exact sequence of characters that are acceptable 
      * 
-     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param MethodGenerator $methodCheck
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValuePattern(Generator\ClassGenerator $generator, MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) {
-        
+    private function handleValuePattern(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'pattern' )) {
             return;
         }
-        
-        $type = $prop->getType();
-        
-        //
-        // protected function _checkPattern($value, $pattern)
-        //
-        $docblock = new DocBlockGenerator('Validate pattern value');        
-        $docblock->setTag(new ParamTag("value", $type->getPhpType()));
-        $docblock->setTag(new ParamTag("pattern", 'string'));
-
-        $methodBody  = "if (!preg_match(\"/^{\$pattern}$/\", \$value)) {" . PHP_EOL;
-        $methodBody .= "    throw new \InvalidArgumentException(\"The restriction pattern with '\$pattern' is not true\");" . PHP_EOL;
-        $methodBody .= "}" . PHP_EOL;
-        
-        $method = new MethodGenerator("_checkPattern", [
-            new ParameterGenerator("value", $type->getPhpType()),
-            new ParameterGenerator("pattern", 'string')
-        ]);
-        $method->setVisibility(MethodGenerator::VISIBILITY_PROTECTED);
-        $method->setDocBlock($docblock);
-        $method->setBody($methodBody);
-
-        $generator->addMethodFromGenerator($method);
-        
-        //
         // add from `protected function _checkRestrictions($value)`
-        //
         $methodBody = "";
         foreach ($checks as $pattern) {
-            $methodBody .= "\$this->_checkPattern(\$value, \"{$pattern['value']}\");" . PHP_EOL;
+            $methodBody .= "\$value = RestrictionUtils::checkPattern(\$value, \"{$pattern['value']}\");" . PHP_EOL;
         }
         $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
-        
     }
     
     /**
      * Specifies the maximum number of decimal places allowed. 
      * 
-     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param MethodGenerator $methodCheck
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueFractionDigits(Generator\ClassGenerator $generator, MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) {
-        
+    private function handleValueFractionDigits(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'fractionDigits', 'float' )) {
             return;
         }
-        
-        $type = $prop->getType();
-        
-        //
-        // protected function _checkFractionDigits($value, $digits)
-        //
-        $docblock = new DocBlockGenerator('Validate fraction digits value');        
-        $docblock->setTag(new ParamTag("value", $type->getPhpType()));
-        $docblock->setTag(new ParamTag("digits", 'integer'));
-        
-        $methodBody  = "if (!is_numeric(\$value)) {" . PHP_EOL;
-        $methodBody .= "    throw new \InvalidArgumentException(\"The '\$value' is not a valid numeric\");" . PHP_EOL;
-        $methodBody .= "}" . PHP_EOL;
-        $methodBody .= "\$count = 0;" . PHP_EOL;
-        $methodBody .= "if ((int)\$value != \$value){" . PHP_EOL;
-        $methodBody .= "    \$count = strlen(\$value) - strrpos(\$value, '.') - 1;" . PHP_EOL;
-        $methodBody .= "}" . PHP_EOL;
-        $methodBody .= "if (\$count > \$digits) {" . PHP_EOL;
-        $methodBody .= "    throw new \InvalidArgumentException(\"The restriction fraction digits with '\$digits' is not true\");" . PHP_EOL;
-        $methodBody .= "}" . PHP_EOL;
-        
-        $method = new MethodGenerator("_checkFractionDigits", [
-            new ParameterGenerator("value", $type->getPhpType()),
-            new ParameterGenerator("digits", 'integer')
-        ]);
-        $method->setVisibility(MethodGenerator::VISIBILITY_PROTECTED);
-        $method->setDocBlock($docblock);
-        $method->setBody($methodBody);
-
-        $generator->addMethodFromGenerator($method);
-        
-        //
         // add from `protected function _checkRestrictions($value)`
-        //
         $methodBody = "";
         foreach ($checks as $fractionDigits) {
-            $methodBody .= "\$this->_checkFractionDigits(\$value, {$fractionDigits['value']});" . PHP_EOL;
+            $methodBody .= "\$value = RestrictionUtils::checkFractionDigits(\$value, {$fractionDigits['value']});" . PHP_EOL;
         }
         $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
-        
     }
     
     /**
+     * Specifies the exact number of digits allowed. Must be greater than zero
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     */
+    private function handleValueTotalDigits(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'totalDigits' )) {
+            return;
+        }
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $totalDigits) {
+            $methodBody .= "\$value = RestrictionUtils::checkTotalDigits(\$value, {$totalDigits['value']});" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }
+        
+    /**
      * Specifies the exact number of characters or list items allowed. 
      * 
-     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param MethodGenerator $methodCheck
      * @param PHPProperty $prop
      * @param PHPClass $class
      * @return type
      */
-    private function handleValueLength(Generator\ClassGenerator $generator, MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) {
-        
+    private function handleValueLength(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'length' )) {
             return;
         }
-        
+        $nativeType = 'mixed';
         $type = $prop->getType();
-        
-        //
-        // protected function _checkLength($value, $digits)
-        //
-        $docblock = new DocBlockGenerator('Validate length value');        
-        $docblock->setTag(new ParamTag("value", $type->getPhpType()));
-        $docblock->setTag(new ParamTag("length", 'integer'));
-        
-        $methodBody  = "if ((is_numeric(\$value) && \$value != \$length) || " . PHP_EOL;
-        $methodBody .= "    (!is_numeric(\$value) && strlen(\$value) != \$length)) {" . PHP_EOL;
-        $methodBody .= "    throw new \InvalidArgumentException(\"The restriction length with '\$length' is not true\");" . PHP_EOL;
-        $methodBody .= "}" . PHP_EOL;
-        
-        $method = new MethodGenerator("_checkLength", [
-            new ParameterGenerator("value", $type->getPhpType()),
-            new ParameterGenerator("length", 'integer')
-        ]);
-        $method->setVisibility(MethodGenerator::VISIBILITY_PROTECTED);
-        $method->setDocBlock($docblock);
-        $method->setBody($methodBody);
-
-        $generator->addMethodFromGenerator($method);
-        
-        //
+        if ($type && $type->isNativeType()) {
+            $nativeType = $type->getName();
+        }
         // add from `protected function _checkRestrictions($value)`
-        //
         $methodBody = "";
         foreach ($checks as $length) {
-            $methodBody .= "\$this->_checkLength(\$value, {$length['value']});" . PHP_EOL;
+            $methodBody .= "\$value = RestrictionUtils::checkLength(\$value, {$length['value']}, \"{$nativeType}\");" . PHP_EOL;
         }
         $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
-        
     }
+    
+    /**
+     * Specifies the maximum number of characters or list items allowed. Must be equal to or greater than zero.
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     * @return type
+     */
+    private function handleValueMaxLength(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'maxLength' )) {
+            return;
+        }
+        $nativeType = 'mixed';
+        $type = $prop->getType();
+        if ($type && $type->isNativeType()) {
+            $nativeType = $type->getName();
+        }
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $maxLength) {
+            $methodBody .= "\$value = RestrictionUtils::checkMaxLength(\$value, {$maxLength['value']}, \"{$nativeType}\");" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }    
+    
+    /**
+     * Specifies the maximum number of characters or list items allowed. Must be equal to or greater than zero.
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     * @return type
+     */
+    private function handleValueMinLength(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'minLength' )) {
+            return;
+        }
+        $nativeType = 'mixed';
+        $type = $prop->getType();
+        if ($type && $type->isNativeType()) {
+            $nativeType = $type->getName();
+        }
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $minLength) {
+            $methodBody .= "\$value = RestrictionUtils::checkMinLength(\$value, {$minLength['value']}, \"{$nativeType}\");" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }        
+    
+    /**
+     * Specifies the upper bounds for numeric values (the value must be less than this value)
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     */
+    private function handleValueMaxExclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'maxExclusive' )) {
+            return;
+        }
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $maxExclusive) {
+            $methodBody .= "\$value = RestrictionUtils::checkMaxExclusive(\$value, {$maxExclusive['value']});" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }
+    
+    /**
+     * Specifies the lower bounds for numeric values (the value must be greater than this value)
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     */
+    private function handleValueMinExclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'minExclusive' )) {
+            return;
+        }
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $minExclusive) {
+            $methodBody .= "\$value = RestrictionUtils::checkMinExclusive(\$value, {$minExclusive['value']});" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }
+    
+    /**
+     * Specifies the upper bounds for numeric values (the value must be less than or equal to this value)
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     */
+    private function handleValueMaxInclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'maxInclusive' )) {
+            return;
+        }
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $maxInclusive) {
+            $methodBody .= "\$value = RestrictionUtils::checkMaxInclusive(\$value, {$maxInclusive['value']});" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }
+    
+    /**
+     * Specifies the lower bounds for numeric values (the value must be greater than or equal to this value)
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     */
+    private function handleValueMinInclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'minInclusive' )) {
+            return;
+        }
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $minInclusive) {
+            $methodBody .= "\$value = RestrictionUtils::checkMinInclusive(\$value, {$minInclusive['value']});" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }
+    
+    /**
+     * Specifies how white space (line feeds, tabs, spaces, and carriage returns) is handled
+     * 
+     * @param MethodGenerator $methodCheck
+     * @param PHPProperty $prop
+     * @param PHPClass $class
+     */
+    private function handleValueWhiteSpace(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    {
+        if (!$checks = $this->getAvailableChecks( $prop, $class, 'whiteSpace' )) {
+            return;
+        }        
+        // add from `protected function _checkRestrictions($value)`
+        $methodBody = "";
+        foreach ($checks as $whiteSpace) {
+            $methodBody .= "\$value = RestrictionUtils::checkWhiteSpace(\$value, {$whiteSpace['value']});" . PHP_EOL;
+        }
+        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+    }    
     
     private function handleValueMethod(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class, $all = true)
     {
@@ -455,20 +509,21 @@ class ClassGenerator
         $generator->addMethodFromGenerator($method); 
         
         //
-        // Handle Checks
+        // Handle Check Restrictions
         //
+        $generator->addUse('GoetasWebservices\XML\XSDReader\Utils\RestrictionUtils');
         $this->handleValueEnumeration( $generator, $method, $prop, $class );
-        $this->handleValueFractionDigits( $generator, $method, $prop, $class );
-        $this->handleValueLength( $generator, $method, $prop, $class );
-//        $this->handleValueMaxExclusive( $generator, $method, $prop, $class );
-//        $this->handleValueMaxInclusive( $generator, $method, $prop, $class );
-//        $this->handleValueMaxLength( $generator, $method, $prop, $class );
-//        $this->handleValueMinExclusive( $generator, $method, $prop, $class );
-//        $this->handleValueMinInclusive( $generator, $method, $prop, $class );
-//        $this->handleValueMinLength( $generator, $method, $prop, $class );
-        $this->handleValuePattern( $generator, $method, $prop, $class );
-//        $this->handleValueTotalDigits( $generator, $method, $prop, $class );
-//        $this->handleValueWhiteSpace( $generator, $method, $prop, $class );
+        $this->handleValuePattern( $method, $prop, $class );
+        $this->handleValueFractionDigits( $method, $prop, $class );
+        $this->handleValueTotalDigits( $method, $prop, $class );        
+        $this->handleValueLength( $method, $prop, $class );
+        $this->handleValueMaxLength( $method, $prop, $class );
+        $this->handleValueMinLength( $method, $prop, $class );        
+        $this->handleValueMaxExclusive( $method, $prop, $class );
+        $this->handleValueMinExclusive( $method, $prop, $class );
+        $this->handleValueMaxInclusive( $method, $prop, $class );
+        $this->handleValueMinInclusive( $method, $prop, $class );
+        $this->handleValueWhiteSpace( $method, $prop, $class );
         
         $method->setBody( $method->getBody() . PHP_EOL . "return \$value;");
         
@@ -526,8 +581,12 @@ class ClassGenerator
                 $parameter->setType($type->getPhpType());
             }
         }
-
-        $methodBody .= "\$this->" . $prop->getName() . " = \$" . $prop->getName() . ";" . PHP_EOL;
+       
+        if ($type && $type->isSimpleType() && !!count($type->getChecks('__value'))) {
+            $methodBody .= "\$this->" . $prop->getName() . " = " . $type->getPhpType() . "::create(\$" . $prop->getName() . ");" . PHP_EOL;
+        } else {
+            $methodBody .= "\$this->" . $prop->getName() . " = \$" . $prop->getName() . ";" . PHP_EOL;
+        }
         $methodBody .= "return \$this;";
         $method->setBody($methodBody);
         $method->setDocBlock($docblock);
@@ -599,6 +658,9 @@ class ClassGenerator
         } elseif ($type) {
 
             if ($p = $type->isSimpleType()) {
+                if (!!count($type->getChecks('__value'))) {
+                    $tag->setTypes($type->getPhpType());
+                } else
                 if ($t = $p->getType()) {
                     $tag->setTypes($t->getPhpType());
                 }
@@ -706,8 +768,10 @@ class ClassGenerator
         } elseif ($type) {
 
             if ($type->isNativeType()) {
+                $tag->setTypes($type->getPhpType());                
+            } elseif (($p = $type->isSimpleType()) && !!count($type->getChecks('__value'))) {
                 $tag->setTypes($type->getPhpType());
-            } elseif (($p = $type->isSimpleType()) && ($t = $p->getType())) {
+            } elseif ($p && ($t = $p->getType())) {
                 $tag->setTypes($t->getPhpType());
             } else {
                 $tag->setTypes($prop->getType()->getPhpType());
