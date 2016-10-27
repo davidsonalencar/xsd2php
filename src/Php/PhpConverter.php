@@ -402,6 +402,9 @@ class PhpConverter extends AbstractConverter
         $property = new PHPProperty();
         $property->setName($this->getNamingStrategy()->getPropertyName($element));
         $property->setDoc($element->getDoc());
+        
+        $property->setMax($element->getMax());
+        $property->setMin($element->getMin());
 
         $t = $element->getType();
 
@@ -441,11 +444,9 @@ class PhpConverter extends AbstractConverter
 
     private function findPHPClass(PHPClass $class, Item $node, $force = false)
     {
-
         if ($node instanceof ElementRef) {
             return $this->visitElementDef($node->getReferencedElement());
         }
-
         if (!$node->getType()->getName()) {
             return $this->visitTypeAnonymous($node->getType(), $node->getName(), $class);
         } else {

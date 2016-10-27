@@ -84,11 +84,10 @@ class ClassGenerator
      * Defines a list of acceptable values
      * 
      * @param \Zend\Code\Generator\ClassGenerator $generator
-     * @param MethodGenerator $methodCheck
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueEnumeration(Generator\ClassGenerator $generator, MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueEnumeration(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'enumeration' )) {
             return;
@@ -139,18 +138,19 @@ class ClassGenerator
         $generator->addMethodFromGenerator($method);
 
         // add from `protected function _checkRestrictions($value)`
-        $methodBody = "\$value = RestrictionUtils::checkEnumeration(\$value, static::values());" . PHP_EOL;        
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $methodBody = "\RestrictionUtils::checkEnumeration(\$this->value, static::values());" . PHP_EOL;        
+        $method->setBody( $method->getBody() . $methodBody );
     }
 
     /**
      * Defines the exact sequence of characters that are acceptable 
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValuePattern(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValuePattern(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'pattern' )) {
             return;
@@ -158,19 +158,20 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $pattern) {
-            $methodBody .= "\$value = RestrictionUtils::checkPattern(\$value, \"{$pattern['value']}\");" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkPattern(\$this->value, \"{$pattern['value']}\");" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
     
     /**
      * Specifies the maximum number of decimal places allowed. 
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueFractionDigits(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueFractionDigits(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'fractionDigits', 'float' )) {
             return;
@@ -178,19 +179,20 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $fractionDigits) {
-            $methodBody .= "\$value = RestrictionUtils::checkFractionDigits(\$value, {$fractionDigits['value']});" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkFractionDigits(\$this->value, {$fractionDigits['value']});" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
     
     /**
      * Specifies the exact number of digits allowed. Must be greater than zero
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueTotalDigits(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueTotalDigits(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'totalDigits' )) {
             return;
@@ -198,20 +200,21 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $totalDigits) {
-            $methodBody .= "\$value = RestrictionUtils::checkTotalDigits(\$value, {$totalDigits['value']});" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkTotalDigits(\$this->value, {$totalDigits['value']});" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
         
     /**
      * Specifies the exact number of characters or list items allowed. 
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      * @return type
      */
-    private function handleValueLength(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueLength(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'length' )) {
             return;
@@ -224,20 +227,21 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $length) {
-            $methodBody .= "\$value = RestrictionUtils::checkLength(\$value, {$length['value']}, \"{$nativeType}\");" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkLength(\$this->value, {$length['value']}, \"{$nativeType}\");" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
     
     /**
      * Specifies the maximum number of characters or list items allowed. Must be equal to or greater than zero.
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      * @return type
      */
-    private function handleValueMaxLength(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueMaxLength(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'maxLength' )) {
             return;
@@ -250,20 +254,21 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $maxLength) {
-            $methodBody .= "\$value = RestrictionUtils::checkMaxLength(\$value, {$maxLength['value']}, \"{$nativeType}\");" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkMaxLength(\$this->value, {$maxLength['value']}, \"{$nativeType}\");" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }    
     
     /**
      * Specifies the maximum number of characters or list items allowed. Must be equal to or greater than zero.
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      * @return type
      */
-    private function handleValueMinLength(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueMinLength(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'minLength' )) {
             return;
@@ -276,19 +281,20 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $minLength) {
-            $methodBody .= "\$value = RestrictionUtils::checkMinLength(\$value, {$minLength['value']}, \"{$nativeType}\");" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkMinLength(\$this->value, {$minLength['value']}, \"{$nativeType}\");" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }        
     
     /**
      * Specifies the upper bounds for numeric values (the value must be less than this value)
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueMaxExclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueMaxExclusive(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'maxExclusive' )) {
             return;
@@ -296,19 +302,20 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $maxExclusive) {
-            $methodBody .= "\$value = RestrictionUtils::checkMaxExclusive(\$value, {$maxExclusive['value']});" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkMaxExclusive(\$this->value, {$maxExclusive['value']});" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
     
     /**
      * Specifies the lower bounds for numeric values (the value must be greater than this value)
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueMinExclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueMinExclusive(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'minExclusive' )) {
             return;
@@ -316,19 +323,20 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $minExclusive) {
-            $methodBody .= "\$value = RestrictionUtils::checkMinExclusive(\$value, {$minExclusive['value']});" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkMinExclusive(\$this->value, {$minExclusive['value']});" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
     
     /**
      * Specifies the upper bounds for numeric values (the value must be less than or equal to this value)
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueMaxInclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueMaxInclusive(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'maxInclusive' )) {
             return;
@@ -336,19 +344,20 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $maxInclusive) {
-            $methodBody .= "\$value = RestrictionUtils::checkMaxInclusive(\$value, {$maxInclusive['value']});" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkMaxInclusive(\$this->value, {$maxInclusive['value']});" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
     
     /**
      * Specifies the lower bounds for numeric values (the value must be greater than or equal to this value)
      * 
-     * @param MethodGenerator $methodCheck
+     * @param \Zend\Code\Generator\ClassGenerator $generator
      * @param PHPProperty $prop
      * @param PHPClass $class
      */
-    private function handleValueMinInclusive(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
+    private function handleValueMinInclusive(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class) 
     {
         if (!$checks = $this->getAvailableChecks( $prop, $class, 'minInclusive' )) {
             return;
@@ -356,30 +365,11 @@ class ClassGenerator
         // add from `protected function _checkRestrictions($value)`
         $methodBody = "";
         foreach ($checks as $minInclusive) {
-            $methodBody .= "\$value = RestrictionUtils::checkMinInclusive(\$value, {$minInclusive['value']});" . PHP_EOL;
+            $methodBody .= "RestrictionUtils::checkMinInclusive(\$this->value, {$minInclusive['value']});" . PHP_EOL;
         }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
+        $method = $generator->getMethod('validate');
+        $method->setBody( $method->getBody() . $methodBody );
     }
-    
-    /**
-     * Specifies how white space (line feeds, tabs, spaces, and carriage returns) is handled
-     * 
-     * @param MethodGenerator $methodCheck
-     * @param PHPProperty $prop
-     * @param PHPClass $class
-     */
-    private function handleValueWhiteSpace(MethodGenerator $methodCheck, PHPProperty $prop, PHPClass $class) 
-    {
-        if (!$checks = $this->getAvailableChecks( $prop, $class, 'whiteSpace' )) {
-            return;
-        }        
-        // add from `protected function _checkRestrictions($value)`
-        $methodBody = "";
-        foreach ($checks as $whiteSpace) {
-            $methodBody .= "\$value = RestrictionUtils::checkWhiteSpace(\$value, {$whiteSpace['value']});" . PHP_EOL;
-        }
-        $methodCheck->setBody( $methodCheck->getBody() . $methodBody );
-    }    
     
     private function handleValueMethod(Generator\ClassGenerator $generator, PHPProperty $prop, PHPClass $class, $all = true)
     {
@@ -443,7 +433,15 @@ class ClassGenerator
         }
         
         $methodBody  = "if (\$value !== null) {" . PHP_EOL;
-        $methodBody .= "    \$this->__value = \$this->_checkRestrictions(\$value);" . PHP_EOL;
+        
+        if ($checks = $this->getAvailableChecks( $prop, $class, 'whiteSpace' )) {
+            foreach ($checks as $whiteSpace) {
+                $methodBody .= "    \$this->value = RestrictionUtils::buildWhiteSpace(\$this->value, {$whiteSpace['value']});" . PHP_EOL;
+            }
+        } else {
+            $methodBody .= "    \$this->__value = \$value;" . PHP_EOL;
+        }
+        
         $methodBody .= "}" . PHP_EOL;
         $methodBody .= "return \$this->__value;" . PHP_EOL;
         
@@ -483,49 +481,24 @@ class ClassGenerator
         $generator->addMethodFromGenerator($method);         
         
         //
-        // protected function _checkRestrictions($value)
+        // get method validate
         //
-        $paramTag = new ParamTag("value", "mixed");
-        $paramTag->setTypes($typeDefinition);
-        
-        $returnTag = new ReturnTag("mixed");
-        $returnTag->setTypes($typeDefinition);        
-        
-        $docblock = new DocBlockGenerator('Validate value');        
-        $docblock->setTag($paramTag);
-        $docblock->setTag($returnTag);
-
-        $param = new ParameterGenerator("value");
-        if ($type && !$type->isNativeType()) {
-            $param->setType($type->getPhpType());
-        }
-        
-        $method = new MethodGenerator("_checkRestrictions", [
-            $param
-        ]);
-        $method->setVisibility(MethodGenerator::VISIBILITY_PROTECTED);
-        $method->setDocBlock($docblock);
-
-        $generator->addMethodFromGenerator($method); 
+        $generator->getMethod('validate'); 
         
         //
         // Handle Check Restrictions
-        //
-        $generator->addUse('GoetasWebservices\XML\XSDReader\Utils\RestrictionUtils');
-        $this->handleValueEnumeration( $generator, $method, $prop, $class );
-        $this->handleValuePattern( $method, $prop, $class );
-        $this->handleValueFractionDigits( $method, $prop, $class );
-        $this->handleValueTotalDigits( $method, $prop, $class );        
-        $this->handleValueLength( $method, $prop, $class );
-        $this->handleValueMaxLength( $method, $prop, $class );
-        $this->handleValueMinLength( $method, $prop, $class );        
-        $this->handleValueMaxExclusive( $method, $prop, $class );
-        $this->handleValueMinExclusive( $method, $prop, $class );
-        $this->handleValueMaxInclusive( $method, $prop, $class );
-        $this->handleValueMinInclusive( $method, $prop, $class );
-        $this->handleValueWhiteSpace( $method, $prop, $class );
-        
-        $method->setBody( $method->getBody() . PHP_EOL . "return \$value;");
+        //davidson
+        $this->handleValueEnumeration( $generator, $prop, $class );
+        $this->handleValuePattern( $generator, $prop, $class );
+        $this->handleValueFractionDigits( $generator, $prop, $class );
+        $this->handleValueTotalDigits( $generator, $prop, $class );        
+        $this->handleValueLength( $generator, $prop, $class );
+        $this->handleValueMaxLength( $generator, $prop, $class );
+        $this->handleValueMinLength( $generator, $prop, $class );        
+        $this->handleValueMaxExclusive( $generator, $prop, $class );
+        $this->handleValueMinExclusive( $generator, $prop, $class );
+        $this->handleValueMaxInclusive( $generator, $prop, $class );
+        $this->handleValueMinInclusive( $generator, $prop, $class );
         
     }
 
@@ -533,7 +506,7 @@ class ClassGenerator
     {
         $methodBody = '';
         $docblock = new DocBlockGenerator();
-
+        
         $docblock->setShortDescription("Sets a new " . $prop->getName());
 
         if ($prop->getDoc()) {
@@ -557,10 +530,9 @@ class ClassGenerator
                     ->getType()->getPhpType() . "[]");
             $parameter->setType("array");
 
-            if ($p = $type->getArg()->getType()->isSimpleType()
-            ) {
+            if ($p = $type->getArg()->getType()->isSimpleType()) {
                 if (($t = $p->getType())) {
-                    $patramTag->setTypes($t->getPhpType());
+                    $patramTag->setTypes($t->getPhpType()."[]");
                 }
             }
         } elseif ($type) {
@@ -582,8 +554,13 @@ class ClassGenerator
             }
         }
        
+        
         if ($type && $type->isSimpleType() && !!count($type->getChecks('__value'))) {
             $methodBody .= "\$this->" . $prop->getName() . " = " . $type->getPhpType() . "::create(\$" . $prop->getName() . ");" . PHP_EOL;
+        } else if ($type && $type instanceof PHPClassOf && ($tt = $type->getArg()->getType()) && $tt->isSimpleType()) {
+            $methodBody .= "\$this->" . $prop->getName() . " = array_map(function(\$value){". PHP_EOL;
+            $methodBody .= "   return {$tt->getPhpType()}::create(\$value);" . PHP_EOL;
+            $methodBody .= "}, \${$prop->getName()});" . PHP_EOL;
         } else {
             $methodBody .= "\$this->" . $prop->getName() . " = \$" . $prop->getName() . ";" . PHP_EOL;
         }
@@ -651,6 +628,9 @@ class ClassGenerator
             $tt = $type->getArg()->getType();
             $tag->setTypes($tt->getPhpType() . "[]");
             if ($p = $tt->isSimpleType()) {
+                if (!!count($tt->getChecks('__value'))) {
+                    $tag->setTypes($tt->getPhpType() . "[]");
+                } else
                 if (($t = $p->getType())) {
                     $tag->setTypes($t->getPhpType() . "[]");
                 }
@@ -716,8 +696,12 @@ class ClassGenerator
                 $parameter->setType($tt->getPhpType());
             }
         }
-
-        $methodBody = "\$this->" . $prop->getName() . "[] = \$" . $propName . ";" . PHP_EOL;
+        
+        if ($tt->isSimpleType() && !!count($tt->getChecks('__value'))) {
+            $methodBody = "\$this->" . $prop->getName() . "[] = {$tt->getPhpType()}::create(\$" . $propName . ");" . PHP_EOL;
+        } else {
+            $methodBody = "\$this->" . $prop->getName() . "[] = \$" . $propName . ";" . PHP_EOL;
+        }
         $methodBody .= "return \$this;";
         $method->setBody($methodBody);
         $method->setDocBlock($docblock);
@@ -734,10 +718,76 @@ class ClassGenerator
 
         $this->handleGetter($generator, $prop, $class);
         $this->handleSetter($generator, $prop, $class);
+        
     }
 
+    protected function handleValidateMethod(Generator\ClassGenerator $class) {
+        
+        $methodValidate = $class->getMethod('validate');
+        if (!$methodValidate) {
+            
+            $class->addUse('GoetasWebservices\XML\XSDReader\Utils\RestrictionUtils');
+            $class->addUse('GoetasWebservices\XML\XSDReader\Exception\RestrictionException');
+            
+            $returnTag = new ReturnTag("array");
+
+            $docblock = new DocBlockGenerator('Validate value');
+            $docblock->setTag($returnTag);
+
+            $methodValidate = new MethodGenerator("validate");
+            $methodValidate->setVisibility(MethodGenerator::VISIBILITY_PUBLIC);
+            $methodValidate->setDocBlock($docblock);
+
+            $class->addMethodFromGenerator($methodValidate); 
+        }
+        
+    }
+    
     private function handleProperty(Generator\ClassGenerator $class, PHPProperty $prop)
-    {
+    {        
+        $type = $prop->getType();
+        
+        //
+        // protected function validate($value)
+        //
+        $methodValidate = $class->getMethod('validate');
+        
+        $min = $prop->getMin();
+        $max = $prop->getMax();
+        
+        if ($type && $type instanceof PHPClassOf && ($tt = $type->getArg()) instanceof PHPProperty) {
+            $min = $tt->getMin();
+            $max = $tt->getMax();
+        }
+                
+        $body = $methodValidate->getBody();
+        if ($min > 0) {
+            $body .= "RestrictionUtils::checkRequired(\$this->{$prop->getName()}, {$min}, {$max});" . PHP_EOL;
+        }
+        
+        if ($type && $type instanceof PHPClassOf && ($tt = $type->getArg()->getType()) && !$tt->isSimpleType()) {
+            
+            $body .= "foreach (\$this->{$prop->getName()} as \$value) {" . PHP_EOL;;
+            $body .= "    \$value->validate();" . PHP_EOL;
+            $body .= "}" . PHP_EOL;
+            
+        } else
+        if ($type && $type instanceof PHPClassOf && ($tt = $type->getArg()) instanceof PHPProperty) {
+            
+            $body .= "foreach (\$this->{$prop->getName()} as \$value) {" . PHP_EOL;;
+            if (!$tt->getType()->isNativeType()) {
+                $body .= "    \$value->validate();" . PHP_EOL;
+            } else {
+                $body .= "    RestrictionUtils::checkRequired(\$value, {$min}, {$max});" . PHP_EOL;
+            }
+            $body .= "}" . PHP_EOL;
+        }
+                
+        if ($type && !$type->isNativeType()) {//$type->isSimpleType() && !!count($type->getChecks('__value'))
+            $body .= '$this->' . $prop->getName() . '->validate();' . PHP_EOL;
+        } 
+        $methodValidate->setBody( $body );
+        
         $generatedProp = new PropertyGenerator($prop->getName());
         $generatedProp->setVisibility(PropertyGenerator::VISIBILITY_PRIVATE);
 
@@ -755,8 +805,6 @@ class ClassGenerator
         }
         $tag = new PropertyTag($prop->getName(), 'mixed');
 
-        $type = $prop->getType();
-
         if ($type && $type instanceof PHPClassOf) {
             $tt = $type->getArg()->getType();
             $tag->setTypes($tt->getPhpType() . "[]");
@@ -765,6 +813,7 @@ class ClassGenerator
                     $tag->setTypes($t->getPhpType() . "[]");
                 }
             }
+            
         } elseif ($type) {
 
             if ($type->isNativeType()) {
@@ -791,6 +840,8 @@ class ClassGenerator
         $class->setName($type->getName());
         $class->setDocblock($docblock);
 
+        $this->handleValidateMethod($class);
+        
         if ($extends = $type->getExtends()) {
             if ($p = $extends->isSimpleType()) {
                 $this->handleProperty($class, $p);
