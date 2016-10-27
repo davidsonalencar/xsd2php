@@ -4,4 +4,4 @@
 /.idea
 composer.lock
 vendor/
-
+nbproject/
