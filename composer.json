@@ -1,4 +1,10 @@
 {
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/davidsonalencar/xsd-reader.git"
+    }
+  ],
   "name": "goetas-webservices/xsd2php",
   "description": "Convert XSD  (XML Schema) definitions into PHP classes and JMS metadata",
   "type": "library",
