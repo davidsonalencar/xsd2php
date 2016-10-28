@@ -765,7 +765,7 @@ class ClassGenerator
             $body .= "RestrictionUtils::checkRequired(\$this->{$prop->getName()}, {$min}, {$max});" . PHP_EOL;
         }
         
-        if ($type && $type instanceof PHPClassOf && ($tt = $type->getArg()->getType()) && !$tt->isSimpleType()) {
+        if ($type && $type instanceof PHPClassOf && ($tt = $type->getArg()->getType()) && !$tt->isSimpleType() && !$tt->isNativeType()) {
             
             $body .= "foreach (\$this->{$prop->getName()} as \$value) {" . PHP_EOL;;
             $body .= "    \$value->validate();" . PHP_EOL;
@@ -778,7 +778,7 @@ class ClassGenerator
             if (!$tt->getType()->isNativeType()) {
                 $body .= "    \$value->validate();" . PHP_EOL;
             } else {
-                $body .= "    RestrictionUtils::checkRequired(\$value, {$min}, {$max});" . PHP_EOL;
+                $body .= "    RestrictionUtils::checkRequired(\$value, {$prop->getMin()}, {$prop->getMax()});" . PHP_EOL;
             }
             $body .= "}" . PHP_EOL;
         }

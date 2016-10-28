@@ -273,7 +273,7 @@ class PHPConversionTest extends \PHPUnit_Framework_TestCase
                         <xs:element name="procedimentosRealizados">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="procedimentoRealizado" type="st_texto4" maxOccurs="unbounded"/>
+                                    <xs:element name="procedimentoRealizado" type="xs:string" maxOccurs="unbounded"/>
                                 </xs:sequence>
                             </xs:complexType>
 			</xs:element>
